@@ -7,7 +7,7 @@ import {
   Stack,
   CircularProgress,
 } from "@mui/material";
-import { useState } from "react";
+import { useState, useEffect  } from "react";
 import { ethers } from "ethers";
 import { useWeb3 } from "../web3/useWeb3";
 import { CONTRACT_ADDRESS } from "../web3/config";
@@ -19,6 +19,30 @@ export default function Treasury() {
   const [balance, setBalance] = useState("");
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
+  const [ownerAddress, setOwnerAddress] = useState(null);
+  const [checkingOwner, setCheckingOwner] = useState(true);
+
+  useEffect(() => {
+    const fetchOwner = async () => {
+      try {
+        if (!contract) return;
+
+        const owner = await contract.owner();
+        setOwnerAddress(owner);
+      } catch (err) {
+        console.error("Failed to fetch owner:", err);
+      } finally {
+        setCheckingOwner(false);
+      }
+    };
+
+    fetchOwner();
+  }, [contract]);
+
+  const isContractOwner =
+    ownerAddress &&
+    account &&
+    ownerAddress.toLowerCase() === account.toLowerCase();
 
   const fetchBalance = async () => {
     try {
@@ -32,24 +56,18 @@ export default function Treasury() {
 
   const handleDeposit = async () => {
     try {
-      console.log("strat");
-      if (!contract || !hlusd) return;
+      if (!contract) return;
       if (!amount) return toast.warning("Enter amount");
 
       setLoading(true);
 
-      const parsedAmount = ethers.parseUnits(amount, 18);
-      console.log(parsedAmount);
-      console.log("approved start");
-      // Step 1: Approve HLUSD
-      const approveTx = await hlusd.approve(CONTRACT_ADDRESS, parsedAmount);
-      await approveTx.wait();
-      console.log("approved end");
+      const parsedAmount = ethers.parseEther(amount);
 
-      // Step 2: Deposit
-      const depositTx = await contract.depositTreasury(parsedAmount);
+      const depositTx = await contract.depositTreasury({
+        value: parsedAmount,
+      });
+
       await depositTx.wait();
-      console.log("deposit end");
 
       toast.success("Treasury Deposited Successfully!");
       setAmount("");
@@ -62,7 +80,11 @@ export default function Treasury() {
     }
   };
 
-  if (!isOwner) {
+  if (checkingOwner) {
+    return <CircularProgress />;
+  }
+
+  if (!isContractOwner) {
     return (
       <Typography color="error">
         Only contract owner can access Treasury Management.

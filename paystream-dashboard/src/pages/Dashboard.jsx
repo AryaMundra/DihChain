@@ -20,8 +20,49 @@
 
 import { Box, Typography, Paper, Button, Chip, Stack } from "@mui/material";
 import { ArrowForward, RocketLaunch } from "@mui/icons-material";
+import { useEffect, useState } from "react";
+import { ethers } from "ethers";
+import { PAYSTREAM_ABI } from "../web3/abi"; 
+import {CONTRACT_ADDRESS} from "../web3/config";
 
 export default function Dashboard() {
+  const [activeStreams, setActiveStreams] = useState("—");
+  const [treasuryBalance, setTreasuryBalance] = useState("—");
+  const [totalLiability, setTotalLiability] = useState("—");
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        if (!window.ethereum) return;
+
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const contract = new ethers.Contract(
+          CONTRACT_ADDRESS,
+          PAYSTREAM_ABI,
+          provider
+        );
+
+        const [streams, treasury, liability] = await Promise.all([
+          contract.totalActiveStreams(),
+          contract.treasuryBalance(),
+          contract.totalAccruedLiability(),
+        ]);
+
+        setActiveStreams(streams.toString());
+        setTreasuryBalance(
+          Number(ethers.formatEther(treasury)).toFixed(4) + " HLUSD"
+        );
+        setTotalLiability(
+          Number(ethers.formatEther(liability)).toFixed(4) + " HLUSD"
+        );
+      } catch (err) {
+        console.error("Failed to load dashboard stats:", err);
+      }
+    };
+
+    loadStats();
+  }, []);
+
   return (
     <Box>
       {/* Hero Section */}
@@ -169,9 +210,9 @@ export default function Dashboard() {
       {/* Overview Cards */}
       <Stack direction={{ xs: "column", sm: "row" }} spacing={3}>
         {[
-          { label: "Active Streams", value: "—" },
-          { label: "Treasury Balance", value: "—" },
-          { label: "Total Employees", value: "—" },
+          { label: "Active Streams", value: activeStreams },
+          { label: "Treasury Balance", value: treasuryBalance },
+          { label: "Total Liability", value: totalLiability },
         ].map(({ label, value }) => (
           <Paper
             key={label}

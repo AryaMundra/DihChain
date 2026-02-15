@@ -289,6 +289,9 @@ export default function Streams() {
     setLoadingAction("");
   };
 
+  console.log("Employee value:", employee);
+  console.log("Is valid address:", ethers.isAddress(employee));
+
   const handleStartStream = async () => {
     try {
       if (!contract) return;
@@ -303,14 +306,20 @@ export default function Streams() {
 
       const parsedSalary = ethers.parseUnits(salary, 18);
 
-      // Convert months → seconds
-      const durationSeconds =
-        Number(durationMonths) * 30 * 24 * 60 * 60;
+      // Convert months (string like "0.01") into seconds safely
+      const secondsPerMonth = 30n * 24n * 60n * 60n; // 2592000
 
-      const cliffSeconds =
-        cliffMonths
-          ? Number(cliffMonths) * 30 * 24 * 60 * 60
-          : 0;
+      // Convert months to 18 decimal precision
+      const monthsScaled = ethers.parseUnits(durationMonths, 18);
+
+      // Now calculate seconds safely
+      const durationSeconds =
+        (monthsScaled * secondsPerMonth) / 10n**18n;
+
+      const cliffSeconds = cliffMonths
+        ? (ethers.parseUnits(cliffMonths, 18) * secondsPerMonth) / 10n**18n
+        : 0n;
+
 
       const stream = await contract.streams(employee);
 
@@ -357,7 +366,7 @@ export default function Streams() {
       const tx = await contract.startStream(
         employee,
         parsedSalary,
-        Number(tax),
+        BigInt(tax),
         durationSeconds,
         cliffSeconds
       );

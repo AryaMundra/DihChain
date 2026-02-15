@@ -50,7 +50,7 @@ export const PAYSTREAM_ABI = [
   "function withdraw()",
 
   // Receive
-  "receive() external payable"
+  "receive() payable"
 ];
 
 
