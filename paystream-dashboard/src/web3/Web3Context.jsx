@@ -1,6 +1,7 @@
 import { createContext, useState } from "react";
 import { ethers } from "ethers";
-import { CONTRACT_ADDRESS, HLUSD_ADDRESS, CHAIN_ID, CHAIN_HEX } from "./config";
+// import { CONTRACT_ADDRESS, HLUSD_ADDRESS, CHAIN_ID, CHAIN_HEX } from "./config";
+import { CONTRACT_ADDRESS, CHAIN_ID, CHAIN_HEX } from "./config";
 import { PAYSTREAM_ABI, ERC20_ABI } from "./abi";
 
 export const Web3Context = createContext(null);
@@ -10,7 +11,7 @@ export function Web3Provider({ children }) {
   const [signer, setSigner] = useState(null);
   const [account, setAccount] = useState(null);
   const [contract, setContract] = useState(null);
-  const [hlusd, setHlusd] = useState(null);
+  // const [hlusd, setHlusd] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
 
   const connectWallet = async () => {
@@ -39,13 +40,13 @@ export function Web3Provider({ children }) {
         signer
       );
 
-      const hlusdInstance = new ethers.Contract(
-        HLUSD_ADDRESS,
-        ERC20_ABI,
-        signer
-      );
+      // const hlusdInstance = new ethers.Contract(
+      //   HLUSD_ADDRESS,
+      //   ERC20_ABI,
+      //   signer
+      // );
       window.debugContract = contractInstance;
-      window.debugHlusd = hlusdInstance;
+      // window.debugHlusd = hlusdInstance;
       window.debugAccount = accounts[0];
 
       const ownerAddress = await contractInstance.owner();
@@ -54,7 +55,7 @@ export function Web3Provider({ children }) {
       setSigner(signer);
       setAccount(accounts[0]);
       setContract(contractInstance);
-      setHlusd(hlusdInstance);
+      // setHlusd(hlusdInstance);
       setIsOwner(accounts[0].toLowerCase() === ownerAddress.toLowerCase());
 
     } catch (error) {
@@ -69,7 +70,7 @@ export function Web3Provider({ children }) {
         signer,
         account,
         contract,
-        hlusd,
+        // hlusd,
         isOwner,
         connectWallet,
       }}
